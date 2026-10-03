@@ -30,24 +30,25 @@
 | **同比计算** | `(v25 - v24) / v24 * 100` |
 | **异动阈值** | 亿元类 ≥20%、比率类 ≥0.25pp 触发 ⚠️ |
 | **`__name__` 门** | 直接运行出报告；被 6 号 import 时只提供函数 |
+| **`import radar`** | 6 号以 `import radar` 复用本模块能力，所以文件命名为 radar.py（main.py 不能当模块名） |
 
 ## 文件结构
 
 ```
 05_radar/
-├── main.py    # 主程序
+├── radar.py   # 主程序（6 号以 `import radar` 接入）
 └── README.md  # 本说明文档
 ```
 
 ## 数据准备
 
-任务 1-4 已完成，`data/faiss_index/` 已建好索引（位于项目根目录，main.py 用 `__file__` 爬两层定位）。
+任务 1-4 已完成，`data/faiss_index/` 已建好索引（位于项目根目录，radar.py 用 `__file__` 爬两层定位）。
 
 ## 运行
 
 ```bash
 cd week2_agent/05_radar
-python main.py
+python radar.py
 ```
 
 真实输出（数字已与年报原文核对一致）：
