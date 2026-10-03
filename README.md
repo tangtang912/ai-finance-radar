@@ -1,18 +1,21 @@
 # 📡 AI 财报异动雷达
 
-> 基于 **RAG + LangGraph + MCP** 的 A 股财报智能分析系统  
-> 让 AI 帮你从年报中挖掘财务异动，自动对比两期指标，生成带溯源的智能分析报告
+> 基于 **RAG + Agent + MCP** 的 A 股财报智能分析系统  
+> 上传年报 → 自动提取指标 → 同比发现异动 → 实时行情联动 → 人工审核出结论
 
 ---
 
 ## 🎯 项目目标
 
-1. **RAG 底座**：把 A 股年报 PDF 变成可检索的知识库
-2. **财务指标提取**：结构化提取营收、净利、毛利率、经营现金流
-3. **异动对比**：两期指标同比计算，生成「异动清单」（附溯源）
-4. **Agent + MCP**：接入 akshare 行情 MCP，实现「股票行情 + 财报异动」一站式问答
-5. **HITL 审核闸**：关键结论生成前人工确认，确保可靠性
-6. **Streamlit 界面**：上传 PDF / 提问 / 异动清单卡片 / 行情卡片
+从一份 A 股年报 PDF 出发，构建一个**能自动发现财务异动**的智能分析系统：
+
+1. **RAG 底座**：把年报 PDF 变成可检索的知识库（带页码溯源）
+2. **指标提取**：用 pydantic 结构化提取营收/净利/毛利率/经营现金流
+3. **异动雷达**：两期指标同比对比，超阈值自动标记 ⚠️
+4. **Agent 分析师**：Agent 自主调用工具完成"检索 + 提取 + 对比 + 分析"
+5. **实时行情**：通过 akshare MCP server 接入股价、涨跌幅等实时数据
+6. **HITL 审核闸**：生成最终结论前人工确认，确保可靠性
+7. **Web 门面**：Streamlit 网页版，上传 PDF / 提问 / 异动卡片 / 行情卡片
 
 ---
 
@@ -22,136 +25,85 @@
 | :--- | :--- |
 | **RAG** | LangChain + DashScope Embedding + FAISS |
 | **PDF 解析** | pypdf |
-| **结构化提取** | pydantic |
-| **Agent 框架** | LangGraph |
+| **结构化提取** | pydantic v2 |
+| **Agent 框架** | LangGraph + `create_agent` |
 | **工具协议** | MCP（Model Context Protocol） |
 | **行情数据** | akshare |
-| **Web 后端** | FastAPI |
-| **Web 前端** | Streamlit |
+| **数据存储** | SQLite（指标库） |
+| **Web 界面** | Streamlit |
 | **LLM** | 通义千问（DashScope） |
 
 ---
 
-## 📅 4 周计划
+## ⭐ 三大亮点
 
-### 第 1 周：RAG 底座（9.21–9.27）
-
-| 任务 | 内容 | 产出 |
+| 亮点 | 说明 | 对应模块 |
 | :---: | :--- | :--- |
-| 1 | 装包（akshare、faiss-cpu、pypdf 等）；下载年报 PDF | 数据就位 |
-| 2-3 | PDF 加载 → 切块 → DashScope embedding → FAISS 向量库 | 检索链路通 |
-| 4 | 命令行问答 + 溯源（答案附来源页码） | 第一个亮点落地 |
-| 5 | 财务指标结构化提取（营收/净利/毛利率/经营现金流，pydantic） | 异动对比的原料 |
+| **亮点①** | 带页码溯源的 RAG 问答 | `03_cli_qa` |
+| **亮点②** | HITL 审核闸：结论生成前人工确认 | `09_hitl_gate` |
+| **亮点③** | 自研 akshare 行情 MCP server | `08_akshare_mcp` |
 
-**周验收**：问「XX 公司 2025 年营收多少」→ 带页码答出；指标字段能抽全
+---
 
-### 第 2 周：Agent + 异动对比 + MCP（9.28–10.4）
+## 📅 三周计划
 
-| 任务 | 内容 | 产出 |
-| :---: | :--- | :--- |
-| 1-2 | 异动对比：两期指标 pandas 算同比 → 模型生成「异动清单」 | 招牌功能落地 |
-| 3 | LangGraph 主图 + 检索子图（子图嵌套实战） | 架构成型 |
-| 4 | akshare 行情 MCP server（仿错题本 MCP 写法）+ 测试客户端验证 | 第二个 MCP |
-| 5 | Agent 接入：bind_tools + MCP client 连自己的 server | 全链路通 |
+### 第 1 周：RAG 底座（9.21–10.1）✅ 已完成
 
-**周验收**：问「茅台现在股价多少？顺便说说它年报里的异动」→ Agent 走完全流程
+| 编号 | 模块 | 内容 | 状态 |
+| :---: | :--- | :--- | :---: |
+| 01 | `01_pdf_split` | PDF 加载 + 切块 + 目录指纹过滤 | ✅ |
+| 02 | `02_embedding_faiss` | DashScope Embedding + FAISS 落盘 | ✅ |
+| 03 | `03_cli_qa` | 命令行问答 + 页码溯源（**亮点①**） | ✅ |
+| 04 | `04_financial_extraction` | pydantic 结构化指标提取 | ✅ |
 
-### 第 3 周：组装 + 审核闸 + 界面（10.5–10.11）
+**周验收**：问「XX 公司 2025 年营收多少」→ 带页码答出；指标字段能抽全 ✅
 
-| 任务 | 内容 | 产出 |
-| :---: | :--- | :--- |
-| 1-2 | HITL 审核闸：interrupt_before 拦在「生成分析结论」前 | 第二个亮点落地 |
-| 3-4 | Streamlit 界面：上传 PDF / 提问框 / 异动清单卡片 / 行情卡片 | 可演示 |
-| 5 | 向量库落盘 + 全流程贯通 | 整体跑通 |
+### 第 2 周：Agent 与实时数据（10.2–10.9）
+
+| 编号 | 模块 | 内容 | 状态 |
+| :---: | :--- | :--- | :---: |
+| 05 | `05_radar` | 异动雷达：SQLite 指标库 + 阈值对比 | ✅ |
+| 06 | `06_agent_analyst` | Agent 分析师：`@tool` + `create_agent` | 🚧 |
+| 07 | `07_langgraph_main` | 主图 + 检索子图，把 6 号拆开重搭 | 📅 |
+| 08 | `08_akshare_mcp` | 行情 MCP server + Agent 接入（**亮点③**） | 📅 |
+
+**周验收**：问「工业富联现在股价多少？顺便说说它年报里的异动」→ Agent 走完全流程
+
+### 第 3 周：审核与门面（10.10–10.14）
+
+| 编号 | 模块 | 内容 | 状态 |
+| :---: | :--- | :--- | :---: |
+| 09 | `09_hitl_gate` | HITL 审核闸：`interrupt_before` 拦结论（**亮点②**） | 📅 |
+| 10 | `10_web_radar` | Streamlit 两页 + 审核按钮 + 行情卡片 | 📅 |
 
 **周验收**：浏览器里完整走一遍：上传 → 提问 → 异动清单 → 审核 → 出结论
-
-### 第 4 周：收尾冲刺（10.12–10.14）
-
-| 任务 | 内容 |
-| :---: | :--- |
-| 1 | GitHub 上传 + README（架构图 + 演示截图） |
-| 2 | 简历项目栏定稿 + 面试故事排练 |
-| 3 | 《面试知识库》更新 + 录 1 分钟演示视频 |
 
 ---
 
 ## 📂 项目结构
-ai-finance-radar/
-├── README.md
-├── .gitignore
-├── LICENSE
-├── requirements.txt
+AI财报异动雷达项目/
 │
-├── week1_rag_base/ # 第1周：RAG 底座
-│ ├── 01_pdf_split/ # ✅ PDF加载+切块
-│ │ ├── main.py
-│ │ └── README.md
-│ ├── 02_embedding_faiss/ # 📅 待学习
-│ ├── 03_cli_qa/ # 📅 待学习
-│ └── 04_financial_extraction/ # 📅 待学习
+├── week1_rag_base/ ✅ 已完成（截至 10.1）
+│ ├── 01_pdf_split/ 切块 + 目录指纹过滤
+│ ├── 02_embedding_faiss/ 向量化 + FAISS 落盘
+│ ├── 03_cli_qa/ 问答 + 溯源（亮点①）
+│ └── 04_financial_extraction/ pydantic 结构化提取
 │
-├── week2_agent_mcp/ # 第2周：Agent + MCP
-│ ├── 01_anomaly_comparison/ # 📅 待学习
-│ ├── 02_langgraph_main/ # 📅 待学习
-│ ├── 03_akshare_mcp/ # 📅 待学习
- └── 04_agent_integration/ # 📅 待学习
+├── week2_agent/ 🚧 10.2-10.9「Agent 与实时数据」
+│ ├── 05_radar/ 异动雷达：SQLite + 阈值对比
+│ ├── 06_agent_analyst/ Agent 分析师：@tool + create_agent
+│ ├── 07_langgraph_main/ 主图 + 检索子图
+│ └── 08_akshare_mcp/ 行情 MCP server（亮点③）
 │
-├── week3_ui_review/ # 第3周：界面 + 审核闸
-│ ├── 01_hitl_review/ # 📅 待学习
-│ ├── 02_streamlit_ui/ # 📅 待学习
-│ └── 03_persistence/ # 📅 待学习
+├── week3_hitl_web/ 📅 10.10-10.14「审核与门面」
+│ ├── 09_hitl_gate/ HITL 审核闸（亮点②）
+│ └── 10_web_radar/ 网页雷达：Streamlit + 审核按钮
 │
-├── week4_final/ # 第4周：收尾冲刺
-│ └── README.md # 📅 待补充
-│
-└── data/ # 数据存储
-├── 年报PDF/ # 年报 PDF（不上传）
-│ ├── 紫金矿业2024年报.pdf
-│ ├── 紫金矿业2025年报.pdf
-│ ├── 工业富联2024年报.pdf
-│ ├── 工业富联2025年报.pdf
-│ ├── 招商银行2024年报.pdf
-│ └── 招商银行2025年报.pdf
-└── split.json # 切块结果（自动生成）
-
-text
-
----
-
-## 🚀 快速开始
-
-### 1. 克隆仓库
-```bash
-git clone https://github.com/你的用户名/ai-finance-radar.git
-cd ai-finance-radar
-2. 安装依赖
-
-bash
-pip install -r requirements.txt
-3. 配置环境变量
-
-创建 .env 文件：
-
-env
-DASHSCOPE_API_KEY=sk-xxxxxxxx
-4. 准备年报 PDF
-
-从 巨潮资讯网 下载以下公司的 2024 / 2025 年报：
-
-紫金矿业（601899）
-工业富联（601138）
-招商银行（600036）
-放入 data/年报PDF/ 文件夹，例如：
-
-text
-data/年报PDF/
-├── 紫金矿业2024年报.pdf
-├── 紫金矿业2025年报.pdf
-├── 工业富联2024年报.pdf
-├── 工业富联2025年报.pdf
-├── 招商银行2024年报.pdf
-└── 招商银行2025年报.pdf
+└── data/ 数据目录（永不进仓库）
+├── 年报PDF/ 紫金矿业/工业富联/兴业银行
+├── split.json 切块结果
+├── faiss_index/ FAISS 向量库
+└── metrics.db SQLite 指标库
 
 ---
 
