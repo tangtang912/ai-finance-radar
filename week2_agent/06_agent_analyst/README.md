@@ -2,7 +2,7 @@
 
 ## 功能说明
 
-把 5 号雷达的能力包装成 **3 个 `@tool`**，用 `create_agent` 组装成能自主决策的财报异动分析师。
+把 05雷达的能力包装成 **3 个 `@tool`**，用 `create_agent` 组装成能自主决策的财报异动分析师。
 
 ## 核心流程
 用户提问："工业富联2025年营收异动的原因是什么？"
@@ -25,15 +25,15 @@
 
 ## 核心知识点
 
-| 知识点 | 说明 |
-| :--- | :--- |
+| 知识点 | 说明                            |
+| :--- |:------------------------------|
 | **`sys.path.insert`** | 把 05_radar 加入搜索路径，跨文件夹 import |
-| **`@tool` 装饰器** | 把普通函数包装成 Agent 可调用工具 |
-| **`create_agent`** | LangChain 官方 Agent 创建函数 |
-| **`model=radar.llm`** | 复用 5 号模块里已经初始化好的 LLM |
-| **`stream_mode="values"`** | 流式观察 Agent 每一步 |
-| **ReAct 提示词** | 约束"思考→调用→观察→再思考" |
-| **`if __name__ == "__main__"`** | 被 10 号导入时不卡在 `input()` |
+| **`@tool` 装饰器** | 把普通函数包装成 Agent 可调用工具          |
+| **`create_agent`** | LangChain 官方 Agent 创建函数       |
+| **`model=radar.llm`** | 复用 05模块里已经初始化好的 LLM           |
+| **`stream_mode="values"`** | 流式观察 Agent 每一步                |
+| **ReAct 提示词** | 约束"思考→调用→观察→再思考"              |
+| **`if __name__ == "__main__"`** | 被 10 导入时不卡在 `input()`         |
 
 ## 文件结构
 06_agent_analyst/
