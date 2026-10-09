@@ -9,3 +9,8 @@ __pycache__/
 # IDE 配置
 .idea/
 .DS_Store
+
+# 07 生成的图表（draw_graph.py 可一键再生成，不进仓库）
+week2_agent/07_langgraph_main/graph.md
+week2_agent/07_langgraph_main/main_graph.png
+week2_agent/07_langgraph_main/retrieval_graph.png
