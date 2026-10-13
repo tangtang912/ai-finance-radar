@@ -104,11 +104,6 @@ class AgentState(TypedDict):
     messages: Annotated[list, add_messages]
 
 tools = [search_annual_report, extract_financial_indicators, compare_two_years]
-llm_with_tools = radar.llm.bind_tools(tools)
-
-def agent_node(state: AgentState):
-    """模型节点：思考 + 决定下一步（调用哪个工具，还是直接回答）"""
-    return {"messages": [llm_with_tools.invoke(state["messages"])]}
 
 def route_after_agent(state: AgentState):
     """路由器：还有工具调用→去 tools 节点继续循环；没有→结束"""
@@ -117,16 +112,23 @@ def route_after_agent(state: AgentState):
         return "tools"
     return "end"
 
-def build_main_graph():
+def build_main_graph(tools_list=None):
+    """组装主图。tools_list 不给就用本文件自带的三件套；08号会把 MCP 行情工具传进来"""
+    use_tools = tools if tools_list is None else tools_list
+    llm_with = radar.llm.bind_tools(use_tools)
+
+    def agent_node(state: AgentState):
+        """模型节点：思考 + 决定下一步（调用哪个工具，还是直接回答）"""
+        return {"messages": [llm_with.invoke(state["messages"])]}
+
     g = StateGraph(AgentState)
-    g.add_node("agent", agent_node)             # 模型节点
-    g.add_node("tools", ToolNode(tools))         # 工具节点（10.8 接 MCP 行情工具也加在这里）
+    g.add_node("agent", agent_node)               # 模型节点
+    g.add_node("tools", ToolNode(use_tools))      # 工具节点（08号的MCP行情工具也加在这里）
     g.add_edge(START, "agent")
     g.add_conditional_edges("agent", route_after_agent, {"tools": "tools", "end": END})
-    g.add_edge("tools", "agent")                 # 工具用完回到模型，形成循环
+    g.add_edge("tools", "agent")                  # 工具用完回到模型，形成循环
+    # 预告：09号 HITL 审核闸加在 compile(interrupt_before=["agent"])——模型出结论前停下等真人审核
     return g.compile()
-    # 预告：10.10-11 的 09 号 HITL 审核闸就加在这里——compile(interrupt_before=["agent"])
-    # 让模型每次要出结论前都停下来等真人按"通过/驳回"按钮
 
 main_graph = build_main_graph()
 print("手写图已组装：主图（agent↔tools 循环）+ 检索子图（retrieve→format）✅")
