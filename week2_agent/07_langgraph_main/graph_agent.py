@@ -1,7 +1,7 @@
 import os, sys
 from typing import Annotated, TypedDict
 from langchain_core.tools import tool
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langgraph.graph.message import add_messages
 from langgraph.graph import StateGraph, START, END
 from langgraph.prebuilt import ToolNode
@@ -112,14 +112,21 @@ def route_after_agent(state: AgentState):
         return "tools"
     return "end"
 
-def build_main_graph(tools_list=None):
-    """组装主图。tools_list 不给就用本文件自带的三件套；08号会把 MCP 行情工具传进来"""
+SYSTEM_RULES = """你是财报异动分析师，必须遵守：
+1. 所有数字必须来自工具返回结果，禁止编造或估算工具外的数据。
+2. 所需数据没有工具能提供时，明确说明"没有对应工具/数据"，绝不编数字。
+3. 最终结论注明数字出处（如页码、工具名）。"""
+
+def build_main_graph(tools_list=None, **compile_kwargs):
+    """组装主图。tools_list 不给就用本文件自带的三件套；08号会把 MCP 行情工具传进来
+    compile_kwargs 原样透传给 g.compile()——09号的 checkpointer/interrupt_before 从这进"""
     use_tools = tools if tools_list is None else tools_list
     llm_with = radar.llm.bind_tools(use_tools)
 
     def agent_node(state: AgentState):
         """模型节点：思考 + 决定下一步（调用哪个工具，还是直接回答）"""
-        return {"messages": [llm_with.invoke(state["messages"])]}
+        messages = [SystemMessage(content=SYSTEM_RULES)] + state["messages"]
+        return {"messages": [llm_with.invoke(messages)]}
 
     g = StateGraph(AgentState)
     g.add_node("agent", agent_node)               # 模型节点
@@ -127,8 +134,8 @@ def build_main_graph(tools_list=None):
     g.add_edge(START, "agent")
     g.add_conditional_edges("agent", route_after_agent, {"tools": "tools", "end": END})
     g.add_edge("tools", "agent")                  # 工具用完回到模型，形成循环
-    # 预告：09号 HITL 审核闸加在 compile(interrupt_before=["agent"])——模型出结论前停下等真人审核
-    return g.compile()
+    # 09号 HITL 审核闸走这里：build_main_graph(checkpointer=..., interrupt_before=["agent"])
+    return g.compile(**compile_kwargs)
 
 main_graph = build_main_graph()
 print("手写图已组装：主图（agent↔tools 循环）+ 检索子图（retrieve→format）✅")
