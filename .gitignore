@@ -14,3 +14,7 @@ __pycache__/
 week2_agent/07_langgraph_main/graph.md
 week2_agent/07_langgraph_main/main_graph.png
 week2_agent/07_langgraph_main/retrieval_graph.png
+
+# 本地开发工具目录（Claude Code 配置，不进仓库）
+.agents/
+.claude/
