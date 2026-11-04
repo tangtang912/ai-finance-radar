@@ -1,0 +1,15 @@
+# 一键启动：docker compose up -d
+# 启动前准备 .env 文件（与 compose 同目录）：
+#   API_KEY=你的鉴权密钥
+#   DASHSCOPE_API_KEY=你的通义千问密钥
+services:
+  radar-api:
+    build: .
+    container_name: radar-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data          # FAISS 索引等数据挂载，不进镜像
+    env_file:
+      - .env                      # API_KEY / DASHSCOPE_API_KEY
+    restart: unless-stopped
